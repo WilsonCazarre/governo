@@ -9,15 +9,16 @@ load_dotenv()
 memory = "4096M"
 minecraft_executable = os.getenv("MINECRAFT_EXECUTABLE")
 minecraft_command = f'java -Xmx{memory} -Xms{memory} -jar {minecraft_executable} nogui'
-process: subprocess.Popen = None
+command = ['sudo', 'java', f'-Xmx{memory}', f'-Xms{memory}', minecraft_executable, 'nogui']
 
+process: subprocess.Popen = None
 bot = commands.Bot(command_prefix='$')
 
 
 @bot.command()
 async def start(ctx):
     process = subprocess.Popen(
-        minecraft_command,
+        command,
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
         stderr=subprocess.PIPE
