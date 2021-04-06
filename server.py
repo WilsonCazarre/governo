@@ -1,4 +1,5 @@
 import os
+import atexit
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -50,6 +51,13 @@ class Server:
     def log_status(self):
         if self.process:
             return self.process.stdout.readline()
+
+    @atexit.register
+    def goodbye(self):
+        print("Stopping servers...")
+        if self.process:
+            self.process.kill()
+
 
 
 if __name__ == '__main__':
