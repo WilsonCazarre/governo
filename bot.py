@@ -23,7 +23,7 @@ async def start(ctx):
         stdin=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    await ctx.send('Server started')
+    await ctx.send(subprocess.STDOUT)
 
 
 @bot.command()
