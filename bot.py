@@ -16,7 +16,12 @@ bot = commands.Bot(command_prefix='$')
 
 @bot.command()
 async def start(ctx):
-    process = subprocess.Popen(minecraft_command)
+    process = subprocess.Popen(
+        minecraft_command,
+        stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
     ctx.send('Server started')
 
 
@@ -30,5 +35,6 @@ async def stop(ctx):
 async def log(ctx):
     if process:
         ctx.send(process.stdout)
+
 
 bot.run(os.getenv('TOKEN'))
