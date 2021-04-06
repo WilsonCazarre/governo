@@ -32,7 +32,7 @@ async def stop_server(ctx: commands.Context):
 
 @bot.command()
 async def run_server(ctx: commands.Context, server_id: int):
-    await stop_server()
+    await stop_server(ctx)
     server.run(server_id - 1)
     await ctx.send('Server is running')
 
