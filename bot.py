@@ -29,13 +29,13 @@ async def start(ctx):
 @bot.command()
 async def stop(ctx):
     if process:
-        ctx.send('Server stopped')
+        await ctx.send('Server stopped')
 
 
 @bot.command()
 async def log(ctx):
     if process:
-        ctx.send(process.stdout)
+        await ctx.send(process.stdout)
 
 
 bot.run(os.getenv('TOKEN'))
