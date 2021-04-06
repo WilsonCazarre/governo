@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 memory = "4096M"
-minecraft_executable = ""
+minecraft_executable = os.getenv("MINECRAFT_EXECUTABLE")
 minecraft_command = f'sudo java -Xmx{memory} -Xms{memory} -jar {minecraft_executable} nogui'
 process: subprocess.Popen = None
 
