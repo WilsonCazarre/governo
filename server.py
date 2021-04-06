@@ -23,7 +23,7 @@ class Server:
                        f'-Xmx{self.memory}',
                        f'-Xms{self.memory}',
                        '-jar',
-                       f'{w_dir}{self.minecraft_executable}',
+                       f'{w_dir}/{self.minecraft_executable}',
                        'nogui']
             with open('server_log.txt', 'w') as log_file:
                 self.process = subprocess.Popen(command,
