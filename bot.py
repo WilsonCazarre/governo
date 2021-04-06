@@ -36,6 +36,7 @@ async def stop(ctx):
 async def log(ctx):
     if process:
         await ctx.send(process.stdout)
+        print('logged')
 
 
 bot.run(os.getenv('TOKEN'))
