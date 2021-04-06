@@ -1,42 +1,54 @@
 import os
-import subprocess
 
+from discord import Embed
 from discord.ext import commands
 from dotenv import load_dotenv
+
+from server import Server
 
 load_dotenv()
 
 memory = "4096M"
-minecraft_executable = os.getenv("MINECRAFT_EXECUTABLE")
-minecraft_command = f'java -Xmx{memory} -Xms{memory} -jar {minecraft_executable} nogui'
-command = ['sudo', 'java', f'-Xmx{memory}', f'-Xms{memory}', minecraft_executable, 'nogui']
 
-process: subprocess.Popen = None
+server: Server = Server(memory)
 bot = commands.Bot(command_prefix='$')
 
 
-@bot.command()
-async def start(ctx):
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    await ctx.send(subprocess.STDOUT)
+@bot.command(name='list')
+async def list_servers(ctx: commands.Context):
+    embed = Embed(title="Servidores",
+                  description="Essa é a lista de servidores disponíveis para uso")
+    servers = server.discover_paths()
+    for s in range(len(servers)):
+        embed.add_field(name=servers[s], value=f'ID: {s + 1}', inline=False)
+    await ctx.send(embed=embed)
 
 
 @bot.command()
-async def stop(ctx):
-    if process:
-        await ctx.send('Server stopped')
+async def run_server(ctx: commands.Context, server_id: int):
+    server.run(server_id - 1)
+    await ctx.send('Server is running')
 
 
 @bot.command()
-async def log(ctx):
-    if process:
-        await ctx.send(process.stdout)
-        print('logged')
+async def stop_server(ctx: commands.Context):
+    server.stop()
+    await ctx.send('Server was stopped')
+
+
+@bot.command()
+async def log_server(ctx: commands.Context):
+    await ctx.send('logging...')
+    with open('server_log.txt', 'r') as log_file:
+        message = ''
+        for line in log_file.readlines():
+            message += line
+        await ctx.send(f"```{message}```")
+
+
+@bot.event
+async def on_ready():
+    print(f'Cheers love, the {bot.user} is here!')
 
 
 bot.run(os.getenv('TOKEN'))
