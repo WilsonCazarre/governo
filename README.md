@@ -24,6 +24,7 @@ python -m pip install -r requirements.txt
 4 - Create a new `.env` file
 ```env
 TOKEN=your discord bot token here
+JAVA_EXECUTABLE="your absolute path to the java executable"
 ```
 
 5 - Run the bot
