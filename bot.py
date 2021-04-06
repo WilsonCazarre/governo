@@ -25,17 +25,16 @@ async def list_servers(ctx: commands.Context):
 
 
 @bot.command()
-async def run_server(ctx: commands.Context, server_id: int):
-    if server.process:
-        server.stop()
-    server.run(server_id - 1)
-    await ctx.send('Server is running')
-
-
-@bot.command()
 async def stop_server(ctx: commands.Context):
     server.stop()
     await ctx.send('Server was stopped')
+
+
+@bot.command()
+async def run_server(ctx: commands.Context, server_id: int):
+    await stop_server()
+    server.run(server_id - 1)
+    await ctx.send('Server is running')
 
 
 @bot.command()
