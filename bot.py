@@ -8,7 +8,7 @@ load_dotenv()
 
 memory = "4096M"
 minecraft_executable = os.getenv("MINECRAFT_EXECUTABLE")
-minecraft_command = f'sudo java -Xmx{memory} -Xms{memory} -jar {minecraft_executable} nogui'
+minecraft_command = f'java -Xmx{memory} -Xms{memory} -jar {minecraft_executable} nogui'
 process: subprocess.Popen = None
 
 bot = commands.Bot(command_prefix='$')
