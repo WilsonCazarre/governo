@@ -12,7 +12,7 @@ class Server:
         self.java_executable = os.getenv("JAVA_EXECUTABLE")
         self.status = 'stopped'
         self.process: Optional[subprocess.Popen] = None
-        self.minecraft_executable = '\\server.jar'
+        self.minecraft_executable = 'server.jar'
         self.paths = []
         self.discover_paths()
 
@@ -29,7 +29,7 @@ class Server:
                 self.process = subprocess.Popen(command,
                                                 stdout=log_file,
                                                 stderr=log_file,
-                                                text=True, shell=True,
+                                                text=True,
                                                 universal_newlines=True,
                                                 cwd=w_dir)
             self.status = 'running'
