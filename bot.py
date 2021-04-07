@@ -17,8 +17,10 @@ bot = commands.Bot(command_prefix='$')
 
 @bot.command(name='list')
 async def list_servers(ctx: commands.Context):
-    embed = discord.Embed(title="Servidores",
-                          description="Essa é a lista de servidores disponíveis para uso")
+    embed = discord.Embed(
+        title="Servidores",
+        description="Essa é a lista de servidores disponíveis para uso"
+    )
     servers = server.discover_paths()
     for s in range(len(servers)):
         embed.add_field(name=servers[s], value=f'ID: {s + 1}', inline=False)
@@ -36,7 +38,9 @@ async def stop_server(ctx: commands.Context):
 async def run_server(ctx: commands.Context, server_id: int):
     await stop_server(ctx)
     server.run(server_id - 1)
-    await bot.change_presence(activity=discord.Game(name=f"Hosting {server.paths[server_id].name}"))
+    await bot.change_presence(activity=discord.Game(
+        name=f"Hosting {server.paths[server_id].name}")
+    )
     await ctx.send('Server is running')
 
 
