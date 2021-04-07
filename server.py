@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 class Server:
     def __init__(self, memory):
+        self.version_data
         self.memory = memory
         self.java_executable = get_env_variable("JAVA_EXECUTABLE")
         self.status = 'stopped'
@@ -39,8 +40,9 @@ class Server:
 
     def discover_paths(self):
         versions_folder = BASE_DIR / 'versions'
+        added_folders = for dics in 
         new_paths = [
-            p.resolve() for p in versions_folder.iterdir() if p.is_dir()
+            p.resolve for p in versions_folder.iterdir() if p.name() at 
         ]
         self.paths = new_paths
         return [p.name for p in self.paths]

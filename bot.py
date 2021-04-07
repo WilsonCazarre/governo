@@ -22,7 +22,7 @@ async def list_servers(ctx: commands.Context):
         title="Servidores",
         description="Essa é a lista de servidores disponíveis para uso"
     )
-    servers = server.discover_paths()
+    #servers = server.discover_paths()
     for s in range(len(servers)):
         embed.add_field(name=servers[s], value=f'ID: {s + 1}', inline=False)
     await ctx.send(embed=embed)
