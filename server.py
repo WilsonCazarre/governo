@@ -3,13 +3,15 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+from utils import get_env_variable
+
 BASE_DIR = Path(__file__).resolve().parent
 
 
 class Server:
     def __init__(self, memory):
         self.memory = memory
-        self.java_executable = os.getenv("JAVA_EXECUTABLE")
+        self.java_executable = get_env_variable("JAVA_EXECUTABLE")
         self.status = 'stopped'
         self.process: Optional[subprocess.Popen] = None
         self.minecraft_executable = 'server.jar'

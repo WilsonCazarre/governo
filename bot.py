@@ -1,11 +1,12 @@
-import os
 import atexit
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import errors
 from dotenv import load_dotenv
 
 from server import Server
+from utils import get_env_variable
 
 load_dotenv()
 
@@ -44,6 +45,14 @@ async def run_server(ctx: commands.Context, server_id: int):
     await ctx.send('Server is running')
 
 
+@run_server.error
+async def on_run_server_error(ctx: commands.Context, error: errors.CommandError):
+    if isinstance(error, errors.MissingRequiredArgument):
+        await ctx.send('Você precisa especificar um ID para o servidor.')
+    else:
+        raise error
+
+
 @bot.command()
 async def log_server(ctx: commands.Context):
     await ctx.send('logging...')
@@ -69,6 +78,15 @@ async def on_ready():
     print(f'Cheers love, the {bot.user} is here!')
 
 
+@bot.event
+async def on_command_error(ctx: commands.Context, error: errors.CommandError):
+    if isinstance(error, errors.CommandNotFound):
+        await ctx.send("Looks like you're a little lost. "
+                       "Try $help to see all the available commands.")
+    else:
+        raise error
+
+
 @atexit.register
 def goodbye():
     print("Stopping servers...")
@@ -76,4 +94,4 @@ def goodbye():
         server.process.kill()
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(get_env_variable('TOKEN'))
