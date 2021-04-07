@@ -44,6 +44,9 @@ async def log_server(ctx: commands.Context):
     with open('server_log.txt', 'r') as log_file:
         message = ''
         for line in log_file.readlines():
+            if len(message) + len(line) >= 2000:
+                await ctx.send(f"```{message}```")
+                message = ''
             message += line
         await ctx.send(f"```{message}```")
 
