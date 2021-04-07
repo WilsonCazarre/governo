@@ -39,7 +39,7 @@ async def run_server(ctx: commands.Context, server_id: int):
     await stop_server(ctx)
     server.run(server_id - 1)
     await bot.change_presence(activity=discord.Game(
-        name=f"Hosting {server.paths[server_id].name}")
+        name=f"Hosting {server.paths[server_id - 1].name}")
     )
     await ctx.send('Server is running')
 
