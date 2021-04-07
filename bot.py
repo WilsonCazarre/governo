@@ -48,7 +48,11 @@ async def log_server(ctx: commands.Context):
                 await ctx.send(f"```{message}```")
                 message = ''
             message += line
-        await ctx.send(f"```{message}```")
+
+        if len(message) == 0:
+            await ctx.send('Nothing to log yet')
+        else:
+            await ctx.send(f"```{message}```")
 
 
 @bot.event
