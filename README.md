@@ -24,9 +24,16 @@ python -m pip install -r requirements.txt
 4 - Create a new `.env` file
 ```env
 TOKEN=your discord bot token here
+JAVA_EXECUTABLE="your absolute path to the java executable"
 ```
 
 5 - Run the bot
 ```
 python bot.py
 ```
+
+
+## How to add server versions
+
+In order to serve minecraft versions you need to create a folder in the root of the project called `versions`.
+The bot will see each folder inside `versions` as a minecraft server and will try to run the file `server.jar` when that specific server is requested.
