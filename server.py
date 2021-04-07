@@ -13,6 +13,7 @@ class Server:
         self.status = 'stopped'
         self.process: Optional[subprocess.Popen] = None
         self.minecraft_executable = 'server.jar'
+        self.server_name = ''
         self.paths = []
         self.discover_paths()
 

@@ -1,7 +1,7 @@
 import os
 import atexit
 
-from discord import Embed
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -17,8 +17,8 @@ bot = commands.Bot(command_prefix='$')
 
 @bot.command(name='list')
 async def list_servers(ctx: commands.Context):
-    embed = Embed(title="Servidores",
-                  description="Essa é a lista de servidores disponíveis para uso")
+    embed = discord.Embed(title="Servidores",
+                          description="Essa é a lista de servidores disponíveis para uso")
     servers = server.discover_paths()
     for s in range(len(servers)):
         embed.add_field(name=servers[s], value=f'ID: {s + 1}', inline=False)
@@ -28,6 +28,7 @@ async def list_servers(ctx: commands.Context):
 @bot.command()
 async def stop_server(ctx: commands.Context):
     server.stop()
+    await bot.change_presence(status=discord.Status.idle)
     await ctx.send('Server was stopped')
 
 
@@ -35,6 +36,7 @@ async def stop_server(ctx: commands.Context):
 async def run_server(ctx: commands.Context, server_id: int):
     await stop_server(ctx)
     server.run(server_id - 1)
+    await bot.change_presence(activity=discord.Game(name=f"Hosting {server.paths[server_id].name}"))
     await ctx.send('Server is running')
 
 
@@ -57,6 +59,9 @@ async def log_server(ctx: commands.Context):
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(
+        status=discord.Status.idle
+    )
     print(f'Cheers love, the {bot.user} is here!')
 
 
