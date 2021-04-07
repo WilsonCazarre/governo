@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from server import Server
 from utils import get_env_variable
+from constants import DISCORD_MAX_BODY_LENGTH
 
 load_dotenv()
 
@@ -59,7 +60,7 @@ async def log_server(ctx: commands.Context):
     with open('server_log.txt', 'r') as log_file:
         message = ''
         for line in log_file.readlines():
-            if len(message) + len(line) >= 2000:
+            if len(message) + len(line) >= DISCORD_MAX_BODY_LENGTH:
                 await ctx.send(f"```{message}```")
                 message = ''
             message += line

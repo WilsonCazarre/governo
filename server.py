@@ -1,11 +1,8 @@
-import os
 import subprocess
-from pathlib import Path
 from typing import Optional
 
+from constants import BASE_DIR
 from utils import get_env_variable
-
-BASE_DIR = Path(__file__).resolve().parent
 
 
 class Server:
