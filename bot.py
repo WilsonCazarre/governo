@@ -1,4 +1,5 @@
 import os
+import atexit
 
 from discord import Embed
 from discord.ext import commands
@@ -50,6 +51,13 @@ async def log_server(ctx: commands.Context):
 @bot.event
 async def on_ready():
     print(f'Cheers love, the {bot.user} is here!')
+
+
+@atexit.register
+def goodbye():
+    print("Stopping servers...")
+    if server.process:
+        server.process.kill()
 
 
 bot.run(os.getenv('TOKEN'))
