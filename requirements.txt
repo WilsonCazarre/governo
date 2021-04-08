@@ -1,10 +1,16 @@
 aiohttp==3.7.4.post0
 async-timeout==3.0.1
+asyncio-dgram==1.2.0
 attrs==20.3.0
 chardet==4.0.0
+click==7.1.2
 discord.py==1.7.0
+dnspython==1.15.0
+dnspython3==1.15.0
 idna==3.1
+mcstatus==5.1.2
 multidict==5.1.0
 python-dotenv==0.17.0
+six==1.15.0
 typing-extensions==3.7.4.3
 yarl==1.6.3
