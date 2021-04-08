@@ -5,9 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import errors
 from dotenv import load_dotenv
 
+from cogs.help import Help
 from server import Server
 from utils import get_env_variable
-from constants import DISCORD_MAX_BODY_LENGTH
+from constants import DISCORD_MAX_BODY_LENGTH, SERVER_HOST_NAME
 
 load_dotenv()
 
@@ -19,9 +20,12 @@ bot = commands.Bot(command_prefix='$')
 
 @bot.command(name='list')
 async def list_servers(ctx: commands.Context):
+    """
+    Lists all the available servers.
+    """
     embed = discord.Embed(
-        title="Servidores",
-        description="Essa é a lista de servidores disponíveis para uso"
+        title="Minecraft versions",
+        description="This are the available servers to run"
     )
     servers = server.discover_paths()
     for s in range(len(servers)):
@@ -31,6 +35,9 @@ async def list_servers(ctx: commands.Context):
 
 @bot.command()
 async def stop_server(ctx: commands.Context):
+    """
+    Stops the current running server.
+    """
     server.stop()
     await bot.change_presence(status=discord.Status.idle)
     await ctx.send('Server was stopped')
@@ -38,12 +45,23 @@ async def stop_server(ctx: commands.Context):
 
 @bot.command()
 async def run_server(ctx: commands.Context, server_id: int):
-    await stop_server(ctx)
+    """
+    Runs the server with the specified ID.
+    A list of the available server can be retrieved with the "list" command.
+    This command will always try to stop a running server before starting a new
+    one.
+    """
+    server.stop()
     server.run(server_id - 1)
+    server_name = server.paths[server_id - 1].name
     await bot.change_presence(activity=discord.Game(
-        name=f"Hosting {server.paths[server_id - 1].name}")
+        name=f"Hosting {server}")
     )
-    await ctx.send('Server is running')
+    await ctx.send(embed=discord.Embed(
+        title=f"{server_name} is yours",
+        description=f"Your server is currently running and can be accessed "
+                    f"in https://{SERVER_HOST_NAME}"
+    ))
 
 
 @run_server.error
@@ -56,19 +74,27 @@ async def on_run_server_error(ctx: commands.Context, error: errors.CommandError)
 
 @bot.command()
 async def log_server(ctx: commands.Context):
-    await ctx.send('logging...')
-    with open('server_log.txt', 'r') as log_file:
-        message = ''
-        for line in log_file.readlines():
-            if len(message) + len(line) >= DISCORD_MAX_BODY_LENGTH:
-                await ctx.send(f"```{message}```")
-                message = ''
-            message += line
+    """
+    Returns the java process log of the running server.
+    """
+    if server.process:
+        with open('server_log.txt', 'r') as log_file:
+            message = ''
+            for line in log_file.readlines():
+                if len(message) + len(line) >= DISCORD_MAX_BODY_LENGTH:
+                    await ctx.send(f"```{message}```")
+                    message = ''
+                message += line
 
-        if len(message) == 0:
-            await ctx.send('Nothing to log yet')
-        else:
-            await ctx.send(f"```{message}```")
+            if len(message) == 0:
+                await ctx.send('Nothing to log yet')
+            else:
+                await ctx.send(f"```{message}```")
+    else:
+        await ctx.send(embed=discord.Embed(
+            title="No server running",
+            description=f"You can start one by running {ctx.prefix}run_server <server_id>"
+        ))
 
 
 @bot.event
@@ -94,5 +120,7 @@ def goodbye():
     if server.process:
         server.process.kill()
 
+
+bot.add_cog(Help(bot))
 
 bot.run(get_env_variable('TOKEN'))
