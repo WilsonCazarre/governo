@@ -55,7 +55,7 @@ async def run_server(ctx: commands.Context, server_id: int):
     server.run(server_id - 1)
     server_name = server.paths[server_id - 1].name
     await bot.change_presence(activity=discord.Game(
-        name=f"Hosting {server}")
+        name=f"Hosting {server_name}")
     )
     await ctx.send(embed=discord.Embed(
         title=f"{server_name} is yours",
