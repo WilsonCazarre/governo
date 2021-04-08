@@ -59,7 +59,7 @@ async def run_server(ctx: commands.Context, server_id: int):
     )
     await ctx.send(embed=discord.Embed(
         title=f"{server_name} is yours",
-        description=f"Your server is currently running and can be accessed "
+        description=f"Your server is currently running and can be accessed in "
                     f"**{SERVER_HOST_NAME}**"
     ))
 
