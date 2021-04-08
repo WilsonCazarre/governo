@@ -67,7 +67,8 @@ async def run_server(ctx: commands.Context, server_id: int):
 @run_server.error
 async def on_run_server_error(ctx: commands.Context, error: errors.CommandError):
     if isinstance(error, errors.MissingRequiredArgument):
-        await ctx.send('Você precisa especificar um ID para o servidor.')
+        await ctx.send('Bad command')
+        await Help.get_help_for_command(ctx, bot.commands['run_server'])
     else:
         raise error
 
