@@ -29,6 +29,7 @@ class Server:
                 self.process = subprocess.Popen(command,
                                                 stdout=log_file,
                                                 stderr=log_file,
+                                                stdin=subprocess.PIPE,
                                                 text=True,
                                                 universal_newlines=True,
                                                 cwd=w_dir)
@@ -45,7 +46,9 @@ class Server:
     def stop(self):
         if self.process:
             self.process.stdin.write('/stop\n')
+            self.process.stdin.close()
             self.process = None
+            return
 
     def log_status(self):
         if self.process:
