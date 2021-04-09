@@ -44,7 +44,7 @@ class Server:
 
     def stop(self):
         if self.process:
-            self.process.terminate()
+            self.process.stdin.write('/stop\n')
             self.process = None
 
     def log_status(self):

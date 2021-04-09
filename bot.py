@@ -1,14 +1,14 @@
 import atexit
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import errors
 from dotenv import load_dotenv
 
 from cogs.help import Help
-from server import Server
-from utils import get_env_variable
 from constants import DISCORD_MAX_BODY_LENGTH, SERVER_HOST_NAME
+from server import Server
+from utils import get_env_variable, update_status
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ async def stop_server(ctx: commands.Context):
     Stops the current running server.
     """
     server.stop()
-    await bot.change_presence(status=discord.Status.idle)
+    await update_status(bot)
     await ctx.send('Server was stopped')
 
 
@@ -54,9 +54,7 @@ async def run_server(ctx: commands.Context, server_id: int):
     server.stop()
     server.run(server_id - 1)
     server_name = server.paths[server_id - 1].name
-    await bot.change_presence(activity=discord.Game(
-        name=f"Hosting {server_name}")
-    )
+    await update_status(bot)
     await ctx.send(embed=discord.Embed(
         title=f"{server_name} is yours",
         description=f"Your server is currently running and can be accessed in "
@@ -65,7 +63,8 @@ async def run_server(ctx: commands.Context, server_id: int):
 
 
 @run_server.error
-async def on_run_server_error(ctx: commands.Context, error: errors.CommandError):
+async def on_run_server_error(ctx: commands.Context,
+                              error: errors.CommandError):
     if isinstance(error, errors.MissingRequiredArgument):
         await ctx.send('Bad command')
         await Help.get_help_for_command(ctx, bot.commands['run_server'])
@@ -98,11 +97,32 @@ async def log_server(ctx: commands.Context):
         ))
 
 
+@bot.command()
+async def status(ctx: commands.Context):
+    """
+    Return the status of the current running server, if any.
+    """
+    message = await ctx.send('Pinging the server...')
+    try:
+        server_status = await update_status(bot)
+        await message.edit(content=f'Hosting {server_status.description}')
+    except ConnectionRefusedError:
+        await message.edit(content="It looks like the server is offline")
+
+
+@tasks.loop(seconds=5)
+async def keep_status_update():
+    print('updating status...')
+    await update_status(bot)
+
+
 @bot.event
 async def on_ready():
-    await bot.change_presence(
-        status=discord.Status.idle
-    )
+    try:
+        await update_status(bot)
+        keep_status_update.start()
+    except ConnectionRefusedError:
+        pass
     print(f'Cheers love, the {bot.user} is here!')
 
 
