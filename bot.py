@@ -57,7 +57,7 @@ async def run_server(ctx: commands.Context, server_id: int):
     await update_status(bot)
     await ctx.send(embed=discord.Embed(
         title=f"{server_name} is yours",
-        description=f"Your server is currently running and can be accessed in "
+        description=f"Your server is currently running and can be accessed "
                     f"**{SERVER_HOST_NAME}**"
     ))
 
