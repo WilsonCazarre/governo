@@ -9,15 +9,16 @@ class Server:
     def __init__(self, memory):
         self.memory = memory
         self.java_executable = get_env_variable("JAVA_EXECUTABLE")
-        self.status = 'stopped'
-        self.process: Optional[subprocess.Popen] = None
+        self.process: Optional[subprocess.Popen] = subprocess.Popen(
+            ['dir'], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
         self.minecraft_executable = 'server.jar'
         self.server_name = ''
         self.paths = []
         self.discover_paths()
 
     def run(self, version_idx):
-        if not self.process:
+        if self.process.poll() == 0:
             w_dir = self.paths[version_idx]
             command = [self.java_executable,
                        f'-Xmx{self.memory}',
@@ -33,7 +34,7 @@ class Server:
                                                 text=True,
                                                 universal_newlines=True,
                                                 cwd=w_dir)
-            self.status = 'running'
+                print(f'Started new process: {self.process}')
 
     def discover_paths(self):
         versions_folder = BASE_DIR / 'versions'
@@ -44,15 +45,9 @@ class Server:
         return [p.name for p in self.paths]
 
     def stop(self):
-        if self.process:
-            self.process.stdin.write('/stop\n')
-            self.process.stdin.close()
-            self.process = None
-            return
-
-    def log_status(self):
-        if self.process:
-            return self.process.stdout.readline()
+        if self.process.poll() is None:
+            self.process.communicate('/stop\n')
+            print(f'Stopping process: {self.process}')
 
 
 if __name__ == '__main__':

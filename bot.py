@@ -38,9 +38,13 @@ async def stop_server(ctx: commands.Context):
     """
     Stops the current running server.
     """
-    server.stop()
-    await bot.change_presence(status=discord.Status.idle)
-    await ctx.send('Server was stopped')
+    if server.process.poll() is None:
+        await ctx.send('Shutting down internal server...')
+        server.stop()
+        await bot.change_presence(status=discord.Status.idle)
+        await ctx.send('Server was stopped')
+    else:
+        await ctx.send("There's no server running...")
 
 
 @bot.command()
@@ -77,7 +81,7 @@ async def log_server(ctx: commands.Context):
     """
     Returns the java process log of the running server.
     """
-    if server.process:
+    if server.process.poll() is None:
         with open('server_log.txt', 'r') as log_file:
             message = ''
             for line in log_file.readlines():
@@ -116,9 +120,9 @@ async def on_command_error(ctx: commands.Context, error: errors.CommandError):
 
 @atexit.register
 def goodbye():
-    print("Stopping servers...")
-    if server.process:
-        server.process.kill()
+    print("Trying to stop servers...")
+    if server.process.poll() is None:
+        server.stop()
 
 
 bot.add_cog(Help(bot))
