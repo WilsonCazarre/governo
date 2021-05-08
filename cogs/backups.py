@@ -44,7 +44,7 @@ class Backups(commands.Cog):
         return file.get("id")
 
     @tasks.loop(minutes=2)
-    def backup_running_server(self):
+    async def backup_running_server(self):
         if self.governo_server.process.poll() is None:
             server_name = self.governo_server.server_name
             print(f"Starting server backup for: '{server_name}'")
