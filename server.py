@@ -20,6 +20,7 @@ class Server:
     def run(self, version_idx):
         if self.process.poll() == 0:
             w_dir = self.paths[version_idx]
+            self.server_name = w_dir.name
             command = [
                 self.java_executable,
                 f"-Xmx{self.memory}",
@@ -52,6 +53,10 @@ class Server:
         if self.process.poll() is None:
             self.process.communicate("/stop\n")
             print(f"Stopping process: {self.process}")
+
+    def execute_command(self, cmd: str):
+        if self.process.poll() is None:
+            self.process.communicate(f"{cmd}\n")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import errors
 from dotenv import load_dotenv
 
+from cogs.backups import Backups
 from cogs.help import Help
 from server import Server
 from utils import get_env_variable
@@ -31,6 +32,19 @@ async def list_servers(ctx: commands.Context):
     for s in range(len(servers)):
         embed.add_field(name=servers[s], value=f"ID: {s + 1}", inline=False)
     await ctx.send(embed=embed)
+
+
+@bot.command(name="cmd")
+async def execute_command(ctx: commands.Context, *args):
+    """
+    Sends the input to the minecraft server as a admin command.
+
+    Writes the args to the STDIN of the running Java process.
+    """
+    if server.process.poll() is None:
+        command = " ".join(args)
+        await ctx.send(f"Executing [{command}] on the server")
+        server.execute_command(command)
 
 
 @bot.command()
@@ -132,5 +146,6 @@ def goodbye():
 
 
 bot.add_cog(Help(bot))
+bot.add_cog(Backups(bot, server))
 
 bot.run(get_env_variable("TOKEN"))
