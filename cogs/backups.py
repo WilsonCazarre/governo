@@ -44,7 +44,7 @@ class Backups(commands.Cog):
         file.Upload()
         return file.get("id")
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(hours=3)
     async def backup_running_server(self):
         if self.governo_server.process.poll() is None:
             server_name = self.governo_server.server_name
