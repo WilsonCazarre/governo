@@ -91,10 +91,12 @@ class Backups(commands.Cog):
                 backup_file.SetContentFile(zip_world)
                 backup_file.Upload()
 
-                self.governo_server.execute_command(
-                    f"/say Server backup completed ("
-                    f"{os.path.getsize(zip_world)})"
+                message = (
+                    f"Server backup completed ({os.path.getsize(zip_world)})"
                 )
+
+                self.governo_server.execute_command(f"/say {message}")
+                print(message)
         else:
             print("No server is running, skipping backup")
 
