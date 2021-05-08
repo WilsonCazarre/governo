@@ -1,3 +1,4 @@
+import os
 import shutil
 from datetime import datetime
 from typing import Optional
@@ -43,7 +44,7 @@ class Backups(commands.Cog):
         file.Upload()
         return file.get("id")
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(seconds=30)
     async def backup_running_server(self):
         if self.governo_server.process.poll() is None:
             server_name = self.governo_server.server_name
@@ -76,7 +77,8 @@ class Backups(commands.Cog):
                     }
                     world_backup = self.drive.CreateFile(
                         metadata=folder_metadata
-                    ).Upload()
+                    )
+                    world_backup.Upload()
 
                 folder_id = world_backup.get("id")
                 file_title = datetime.now().strftime("%Y%m%d - %H%M")
@@ -88,6 +90,11 @@ class Backups(commands.Cog):
                 backup_file = self.drive.CreateFile(metadata=file_metadata)
                 backup_file.SetContentFile(zip_world)
                 backup_file.Upload()
+
+                self.governo_server.execute_command(
+                    f"/say Server backup completed ("
+                    f"{os.path.getsize(zip_world)})"
+                )
         else:
             print("No server is running, skipping backup")
 
