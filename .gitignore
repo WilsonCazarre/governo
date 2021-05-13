@@ -132,3 +132,6 @@ dmypy.json
 
 versions/
 server_log.txt
+movies.json
+client_secrets.json
+credentials.json
