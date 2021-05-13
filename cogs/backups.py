@@ -18,7 +18,7 @@ class Backups(commands.Cog):
         self.governo_server = server
         self.drive: Optional[GoogleDrive] = None
         self.create_service()
-        self.backup_running_server.start()
+        # self.backup_running_server.start()
 
     def create_service(self):
         gauth = GoogleAuth()

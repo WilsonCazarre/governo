@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from cogs.backups import Backups
 from cogs.help import Help
+from cogs.movies import Movies
 from server import Server
 from utils import get_env_variable
 from constants import DISCORD_MAX_BODY_LENGTH, SERVER_HOST_NAME
@@ -145,7 +146,8 @@ def goodbye():
         server.stop()
 
 
-bot.add_cog(Help(bot))
 bot.add_cog(Backups(bot, server))
+bot.add_cog(Movies(bot))
+bot.add_cog(Help(bot))
 
 bot.run(get_env_variable("TOKEN"))

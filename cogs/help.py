@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -11,7 +11,7 @@ class Help(commands.Cog):
 
     @staticmethod
     async def get_help_for_command(
-        ctx: commands.Context, command: commands.Command
+        ctx: commands.Context, command: Union[commands.Group, commands.Command]
     ):
 
         embed = discord.Embed(title=command.name, description=command.help)
@@ -20,6 +20,14 @@ class Help(commands.Cog):
                 name="**How to use (syntax)**",
                 value=f"{command.name} {command.signature}",
             )
+        elif isinstance(command, commands.Group):
+            for cmd_name, cmd_obj in command.all_commands.items():
+                name = (
+                    f"{cmd_name} {cmd_obj.signature}"
+                    if cmd_obj.signature
+                    else cmd_name
+                )
+                embed.add_field(name=name, value=cmd_obj.help, inline=False)
 
         await ctx.send(embed=embed)
 
