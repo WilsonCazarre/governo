@@ -30,7 +30,7 @@ class Movies(commands.Cog):
         with open(BASE_DIR / file_path, "w") as outfile:
             json.dump(
                 {
-                    "cinema_channel_id": self.cinema_channel_id,
+                    "cinema_channel_id": int(self.cinema_channel_id),
                     "movies_list": self.movies_list,
                 },
                 outfile,
@@ -131,6 +131,6 @@ class Movies(commands.Cog):
         """
         Changes the channel that is used for the Cinema.
         """
-        self.cinema_channel_id = new_id
+        self.cinema_channel_id = int(new_id)
         self.save_movies_file()
         await ctx.send("New ID saved.")
