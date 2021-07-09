@@ -8,11 +8,11 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
 from constants import BASE_DIR
-from server import Server
+from cogs.minecraftserver import MinecraftServer
 
 
 class Backups(commands.Cog):
-    def __init__(self, bot, server: Server):
+    def __init__(self, bot, server: MinecraftServer):
         self.bot: commands.Bot = bot
         self.bot.remove_command("help")
         self.governo_server = server

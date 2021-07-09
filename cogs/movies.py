@@ -3,6 +3,9 @@ import random
 
 import discord
 import json
+
+from discord import VoiceChannel
+from discord.ext.commands import errors
 from imdb import IMDb, IMDbError
 from discord.ext import commands
 
@@ -15,6 +18,7 @@ class Movies(commands.Cog):
         self.movies_list = []
         self.current_watching = None
         self.cinema_channel_id = None
+        self.mention_id = None
         self.load_movies_file()
         self.imdb = IMDb()
 
@@ -22,8 +26,13 @@ class Movies(commands.Cog):
         file_path = os.getenv("MOVIES_COG_FILE")
         with open(BASE_DIR / file_path, "r") as infile:
             file_content = json.load(infile)
-            self.movies_list = file_content["movies_list"]
-            self.cinema_channel_id = file_content["cinema_channel_id"]
+            try:
+
+                self.movies_list = file_content["movies_list"]
+                self.cinema_channel_id = file_content["cinema_channel_id"]
+                self.mention_id = file_content["mention_id"]
+            except KeyError as e:
+                print(f"{e.args} is not set in movies config file")
 
     def save_movies_file(self):
         file_path = os.getenv("MOVIES_COG_FILE")
@@ -32,6 +41,7 @@ class Movies(commands.Cog):
                 {
                     "cinema_channel_id": int(self.cinema_channel_id),
                     "movies_list": self.movies_list,
+                    "mention_id": self.mention_id,
                 },
                 outfile,
             )
@@ -105,7 +115,9 @@ class Movies(commands.Cog):
                 title=movie["title"],
                 description=f'IMDb rating: {movie["rating"]}',
             )
-            await ctx.send("🎬 The movie will begin right now!", embed=embed)
+            await ctx.send(
+                f"🎬 The movie will begin soon! {self.mention_id}", embed=embed
+            )
             await channel.edit(name=f"🎬🔴 {movie['title']}")
 
     @movie_group.command(pass_context=True, name="stop")
@@ -126,11 +138,61 @@ class Movies(commands.Cog):
         else:
             await ctx.send("There's no movie being watched 😴")
 
-    @movie_group.command(pass_context=True, name="change_channel")
-    async def change_channel(self, ctx: commands.Context, new_id):
+    @movie_group.command(pass_context=True, name="set_channel")
+    async def set_channel(self, ctx: commands.Context, new_id):
         """
         Changes the channel that is used for the Cinema.
         """
-        self.cinema_channel_id = int(new_id)
+        try:
+            new_id = int(new_id)
+        except ValueError:
+            await ctx.send("Channel ID should be an integer")
+            return
+        try:
+            new_channel = next(
+                filter(
+                    lambda ch: ch.id == new_id
+                    and isinstance(ch, VoiceChannel),
+                    ctx.guild.channels,
+                )
+            )
+        except StopIteration:
+            await ctx.send("There's no voice channel with this id")
+            return
+
+        self.cinema_channel_id = new_id
         self.save_movies_file()
-        await ctx.send("New ID saved.")
+
+        await ctx.send(f"Cinema channel is now set to {new_channel.mention}")
+
+    @set_channel.error
+    async def on_run_server_error(
+        self, ctx: commands.Context, error: errors.CommandError
+    ):
+        if isinstance(error, errors.MissingRequiredArgument):
+            await ctx.send("You need to specify a channel ID")
+        else:
+            raise error
+
+    @movie_group.command(pass_context=True, name="set_mention")
+    async def set_mention(self, ctx: commands.Context, new_role):
+        """
+        Changes the mention role that is used for the Cinema.
+        """
+        try:
+            next(
+                filter(
+                    lambda role: role.mention == new_role,
+                    ctx.guild.roles,
+                )
+            )
+        except StopIteration:
+            await ctx.send("The specified mention does not exist")
+            return
+
+        self.mention_id = new_role
+        self.save_movies_file()
+
+        await ctx.send(
+            f"Ok, I'll mention {new_role} every time we chose a movie!"
+        )
