@@ -35,8 +35,9 @@ async def on_command_error(ctx: commands.Context, error: errors.CommandError):
         raise error
 
 
+DATABASE_URL: str = get_env_variable("DATABASE_URL")
 engine = create_engine(
-    get_env_variable("DATABASE_URL"), echo=False, future=True
+    DATABASE_URL.replace("postgres", "postgresql"), echo=False, future=True
 )
 Base.metadata.create_all(engine)
 
