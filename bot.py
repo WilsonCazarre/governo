@@ -1,17 +1,21 @@
 import discord
+from discord_slash import SlashCommand
 from discord.ext import commands
 from discord.ext.commands import errors
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 from cogs.help import Help
-from cogs.movies import Movies
-from utils import get_env_variable
+from cogs.movies.models import Base
+from cogs.movies.movies import Movies
+from utils.functions import get_env_variable
 
 load_dotenv()
 
 memory = "4096M"
 
 bot = commands.Bot(command_prefix="$")
+slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 
 @bot.event
@@ -31,17 +35,12 @@ async def on_command_error(ctx: commands.Context, error: errors.CommandError):
         raise error
 
 
-# @atexit.register
-# def goodbye():
-#     print("Trying to stop servers...")
-#     if server.process.poll() is None:
-#         server.stop()
+engine = create_engine(
+    get_env_variable("DATABASE_URL"), echo=False, future=True
+)
+Base.metadata.create_all(engine)
 
-
-# Not loading those cogs, cuz server is down
-# bot.add_cog(Backups(bot, server))
-# bot.add_cog(MinecraftCog(bot))
-bot.add_cog(Movies(bot))
+bot.add_cog(Movies(bot, engine))
 bot.add_cog(Help(bot))
 
 bot.run(get_env_variable("TOKEN"))

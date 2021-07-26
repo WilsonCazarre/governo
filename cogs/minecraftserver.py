@@ -1,3 +1,4 @@
+import atexit
 import subprocess
 from typing import Optional
 
@@ -5,8 +6,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import errors
 
-from constants import BASE_DIR, SERVER_HOST_NAME, DISCORD_MAX_BODY_LENGTH
-from utils import get_env_variable
+from utils.functions import BASE_DIR, SERVER_HOST_NAME, DISCORD_MAX_BODY_LENGTH
+from utils.functions import get_env_variable
 
 
 class MinecraftServer:
@@ -167,3 +168,9 @@ class MinecraftCog(commands.Cog):
                     description=f"You can start one by running {ctx.prefix}run_server <server_id>",
                 )
             )
+
+    @atexit.register
+    def goodbye(self):
+        print("Trying to stop servers...")
+        if self.mc_server.process.poll() is None:
+            self.mc_server.stop()

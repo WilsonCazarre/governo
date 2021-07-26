@@ -1,26 +1,48 @@
+import json
 import os
 import random
 
 import discord
-import json
-
 from discord import VoiceChannel
+from discord.ext import commands
 from discord.ext.commands import errors
 from imdb import IMDb, IMDbError
-from discord.ext import commands
 
-from constants import BASE_DIR
+from utils.constants import BASE_DIR, EMBED_COLORS
+from utils.functions import (
+    get_spreadsheet_service,
+    get_env_variable,
+    generate_loading_embed,
+)
+from utils.spreadsheets import Spreadsheet
 
 
 class Movies(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.movies_list = []
         self.current_watching = None
         self.cinema_channel_id = None
         self.mention_id = None
         self.load_movies_file()
         self.imdb = IMDb()
+        self.movies_list = []
+        self.spreadsheet_service = get_spreadsheet_service()
+        self.movie_spreadsheet = Spreadsheet(
+            sheet_id=get_env_variable("SPREADSHEET_ID"),
+            api_service=self.spreadsheet_service,
+            query_range="Watchlist!A:E",
+        )
+        self.config_spreadsheet = Spreadsheet(
+            sheet_id=get_env_variable("SPREADSHEET_ID"),
+            api_service=self.spreadsheet_service,
+            query_range="Config!A:B",
+        )
+
+    def get_movies_list(self):
+        movies = self.movie_spreadsheet.get_rows()
+        for movie in movies:
+            movie["watched"] = movie["watched"].lower() == "true"
+        return movies
 
     def load_movies_file(self):
         file_path = os.getenv("MOVIES_COG_FILE")
@@ -52,11 +74,15 @@ class Movies(commands.Cog):
         Movie list related commands. Type $help movie for more info.
         """
         if ctx.invoked_subcommand is None:
+            message = await ctx.send(embed=generate_loading_embed())
             embed = discord.Embed(
                 title="Movies list",
                 description=":white_check_mark:=Watched    :x:=Not Watched",
+                color=EMBED_COLORS["ready"],
             )
-            movie_list = sorted(self.movies_list, key=lambda m: m["watched"])
+            movie_list = sorted(
+                self.get_movies_list(), key=lambda m: m["watched"]
+            )
             for movie in movie_list:
                 emote = ":white_check_mark:" if movie["watched"] else ":x:"
                 embed.add_field(
@@ -64,36 +90,46 @@ class Movies(commands.Cog):
                     value=f"IMDb rating: {movie['rating']}",
                     inline=False,
                 )
-            await ctx.send(embed=embed)
+            await message.edit(embed=embed)
 
     @movie_group.command(pass_context=True, name="add")
     async def add_movie(self, ctx: commands.Context, imdb_id):
         """
         Adds a movie to the list. You must specify the IMDb id of the movie.
         """
-        if imdb_id in map(lambda x: x["id"], self.movies_list):
-            await ctx.send("The movie is already on the list!")
+        message = await ctx.send(
+            embed=generate_loading_embed("Searching for your movie...")
+        )
+        if imdb_id in map(lambda x: x["imdb_id"], self.get_movies_list()):
+            await message.edit(
+                embed=discord.Embed(
+                    title="The movie is already on the list!",
+                    color=EMBED_COLORS["error"],
+                )
+            )
         else:
-            message = await ctx.send("Searching for your movie...")
             try:
                 movie = self.imdb.get_movie(imdb_id)
-                self.movies_list.append(
-                    {
-                        "id": imdb_id,
-                        "title": movie.data["original title"],
-                        "year": movie.data["year"],
-                        "rating": movie.data["rating"],
-                        "watched": False,
-                    }
-                )
-                self.save_movies_file()
+                new_row = [
+                    int(imdb_id),
+                    movie.data["original title"],
+                    movie.data["year"],
+                    movie.data["rating"],
+                    False,
+                ]
                 embed = discord.Embed(
                     title=f'{imdb_id} - {movie.data["original title"]}',
                     description=f"IMDb rating: {movie.data['rating']}",
+                    color=EMBED_COLORS["ready"],
                 )
+                self.movie_spreadsheet.add_rows(new_row)
                 await message.edit(content=f"New movie added", embed=embed)
-            except IMDbError or KeyError:
-                await message.edit(content="Invalid movie ID")
+            except (IMDbError, KeyError):
+                await message.edit(
+                    embed=discord.Embed(
+                        title="Invalid movie ID", color=EMBED_COLORS["error"]
+                    )
+                )
 
     @movie_group.command(pass_context=True, name="watch")
     async def start_watching(self, ctx: commands.Context):
@@ -143,10 +179,16 @@ class Movies(commands.Cog):
         """
         Changes the channel that is used for the Cinema.
         """
+        message = await ctx.send(embed=generate_loading_embed())
         try:
             new_id = int(new_id)
         except ValueError:
-            await ctx.send("Channel ID should be an integer")
+            await message.edit(
+                embed=discord.Embed(
+                    title="Channel ID should be an integer",
+                    color=EMBED_COLORS["error"],
+                )
+            )
             return
         try:
             new_channel = next(
