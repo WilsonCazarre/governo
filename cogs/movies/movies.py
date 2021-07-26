@@ -3,19 +3,23 @@ from random import choice
 from typing import Dict
 
 import discord
-import sqlalchemy
 from discord import Embed
 from discord.ext import commands
 from discord_slash import cog_ext
+from discord_slash.utils.manage_commands import create_option
 from imdb import IMDb, IMDbError
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.future import Engine
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import NoResultFound
 
 from cogs.movies.models import Movie, ConfigVariable
-from utils.constants import EMBED_COLORS
+from utils.constants import EMBED_COLORS, GUILD_CONFIG_VARIABLES
 from utils.functions import generate_loading_embed
+
+
+class MovieCogNotConfigured(Exception):
+    pass
 
 
 class Movies(commands.Cog):
@@ -25,7 +29,7 @@ class Movies(commands.Cog):
         self.bot = bot
         self.db = db_engine
         self.imdb = IMDb()
-        self.currently_watching: Dict[str, Movie] = dict()
+        self.currently_watching: Dict[int, Movie] = dict()
         self.default_idle_message = "Assistindo nada 😴"
 
     def get_config_variable(self, guild_id: int, var_name: str):
@@ -38,6 +42,21 @@ class Movies(commands.Cog):
             ).one()
 
         return config_var[0].value
+
+    def get_config_variables(self, guild_id: int):
+        configs = dict()
+        with Session(self.db) as session:
+            for var_name in GUILD_CONFIG_VARIABLES:
+                var_model = session.execute(
+                    select(ConfigVariable).where(
+                        ConfigVariable.guild_id == str(guild_id),
+                        ConfigVariable.key == var_name,
+                    )
+                ).scalar_one()
+                if var_model.value is None:
+                    raise MovieCogNotConfigured
+                configs[var_name] = var_model.value
+        return configs
 
     @cog_ext.cog_subcommand(
         base=group_name,
@@ -135,6 +154,18 @@ class Movies(commands.Cog):
     )
     async def watch_movie(self, ctx: commands.Context, imdb_id: int = None):
         message = await ctx.send(embed=generate_loading_embed("beep boop"))
+        try:
+            configs = self.get_config_variables(ctx.guild.id)
+        except MovieCogNotConfigured:
+            await message.edit(
+                embed=Embed(
+                    title="I am not ready :(",
+                    description="Try to use `/movie set_mention` "
+                    "and `/movie set_channel` to get me ready.",
+                    color=EMBED_COLORS["error"],
+                )
+            )
+            return
         if self.currently_watching.get(ctx.guild.id):
             await message.edit(
                 embed=Embed(
@@ -190,15 +221,11 @@ class Movies(commands.Cog):
             self.currently_watching[ctx.guild.id] = chosen
             channel = discord.utils.get(
                 ctx.guild.channels,
-                id=int(
-                    self.get_config_variable(ctx.guild.id, "cinema_channel_id")
-                ),
+                id=int(configs["cinema_channel_id"]),
             )
             role = discord.utils.get(
                 ctx.guild.roles,
-                id=int(
-                    self.get_config_variable(ctx.guild.id, "cinema_role_id")
-                ),
+                id=int(configs["cinema_role_id"]),
             )
 
             embed = Embed(
@@ -221,6 +248,18 @@ class Movies(commands.Cog):
     )
     async def stop_watching(self, ctx: commands.Context):
         message = await ctx.send(embed=generate_loading_embed())
+        try:
+            configs = self.get_config_variables(ctx.guild.id)
+        except MovieCogNotConfigured:
+            await message.edit(
+                embed=Embed(
+                    title="I am not ready :(",
+                    description="Try to use `/movie set_mention` "
+                    "and `/movie set_channel` to get me ready.",
+                    color=EMBED_COLORS["error"],
+                )
+            )
+            return
 
         if not self.currently_watching.get(ctx.guild.id):
             await message.edit(
@@ -245,9 +284,7 @@ class Movies(commands.Cog):
 
         channel = discord.utils.get(
             ctx.guild.channels,
-            id=int(
-                self.get_config_variable(ctx.guild.id, "cinema_channel_id")
-            ),
+            id=int(configs["cinema_channel_id"]),
         )
         await message.edit(
             embed=Embed(
@@ -264,17 +301,17 @@ class Movies(commands.Cog):
         base=group_name,
         name="set_channel",
         description="Set the channel that will be used to watch movies",
-    )
-    async def set_cinema_channel(self, ctx: commands.Context, channel_id: str):
-        message = await ctx.send(embed=generate_loading_embed())
-        channel = discord.utils.get(ctx.guild.channels, id=int(channel_id))
-        if not channel:
-            await message.edit(
-                embed=Embed(
-                    title="Channel not found", color=EMBED_COLORS["error"]
-                )
+        options=[
+            create_option(
+                name="voice_channel",
+                description="The voice channel to watch movies on",
+                option_type=7,
+                required=True,
             )
-            return
+        ],
+    )
+    async def set_cinema_channel(self, ctx: commands.Context, voice_channel):
+        message = await ctx.send(embed=generate_loading_embed())
 
         with Session(self.db) as session:
             session.execute(
@@ -283,16 +320,16 @@ class Movies(commands.Cog):
                     ConfigVariable.guild_id == str(ctx.guild.id),
                     ConfigVariable.key == "cinema_channel_id",
                 )
-                .values(value=channel_id)
+                .values(value=voice_channel.id)
             )
             session.flush()
             session.commit()
 
-        await channel.edit(name=self.default_idle_message, bitrate=96000)
+        await voice_channel.edit(name=self.default_idle_message, bitrate=96000)
         await message.edit(
             embed=Embed(
                 title="Channel updated",
-                description=f"{channel.mention} "
+                description=f"{voice_channel.mention} "
                 f"will now be used to watch movies :)",
                 color=EMBED_COLORS["ready"],
             )
@@ -303,17 +340,17 @@ class Movies(commands.Cog):
         name="set_mention",
         description="Set the role that will be mentioned "
         "when a new movie is choose",
-    )
-    async def set_mention(self, ctx: commands.Context, mention_id: str):
-        message = await ctx.send(embed=generate_loading_embed())
-        role = discord.utils.get(ctx.guild.roles, id=int(mention_id))
-        if not role:
-            await message.edit(
-                embed=Embed(
-                    title="Channel not found", color=EMBED_COLORS["error"]
-                )
+        options=[
+            create_option(
+                name="role",
+                description="The role to be mentioned",
+                option_type=8,
+                required=True,
             )
-            return
+        ],
+    )
+    async def set_mention(self, ctx: commands.Context, role):
+        message = await ctx.send(embed=generate_loading_embed())
 
         with Session(self.db) as session:
             session.execute(
@@ -322,7 +359,7 @@ class Movies(commands.Cog):
                     ConfigVariable.key == "cinema_role_id",
                     ConfigVariable.guild_id == str(ctx.guild.id),
                 )
-                .values(value=mention_id)
+                .values(value=role.id)
             )
             session.flush()
             session.commit()

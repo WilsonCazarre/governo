@@ -12,3 +12,4 @@ EMBED_COLORS = {
     "error": Colour.red(),
 }
 LOADING_MESSAGES = ["Hold on a sec", "What are you waiting for?"]
+GUILD_CONFIG_VARIABLES = ["cinema_channel_id", "cinema_role_id"]
