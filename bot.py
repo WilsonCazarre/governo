@@ -21,7 +21,7 @@ slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 DATABASE_URL: str = get_env_variable("DATABASE_URL")
 engine = create_engine(
-    DATABASE_URL.replace("postgres", "postgres"), echo=True, future=True
+    DATABASE_URL.replace("postgres", "postgresql"), echo=True, future=True
 )
 Base.metadata.create_all(engine)
 
