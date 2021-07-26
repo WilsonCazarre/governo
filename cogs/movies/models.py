@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float, Date, BigInteger
 from sqlalchemy.orm import declarative_base
 
 
@@ -12,4 +12,13 @@ class Movie(Base):
     title = Column(String)
     year = Column(Integer)
     rating = Column(Float)
-    watched = Column(Boolean)
+    guild_id = Column(BigInteger)
+    watched_date = Column(Date, nullable=True)
+
+
+class ConfigVariable(Base):
+    __tablename__ = "configs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    key = Column(String)
+    value = Column(String, nullable=True)
+    guild_id = Column(String)
