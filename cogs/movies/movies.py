@@ -8,12 +8,13 @@ from discord import Embed
 from discord.ext import commands
 from discord_slash import cog_ext
 from imdb import IMDb, IMDbError
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.future import Engine
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import NoResultFound
 
 from cogs.movies.models import Movie, ConfigVariable
-from utils.constants import EMBED_COLORS, GUILD_IDS
+from utils.constants import EMBED_COLORS
 from utils.functions import generate_loading_embed
 
 
@@ -57,7 +58,7 @@ class Movies(commands.Cog):
                 movie = movie[0]
                 emote = ":white_check_mark:" if movie.watched_date else ":x:"
                 embed.add_field(
-                    name=f"{emote} {movie.title} ({movie.year})",
+                    name=f"{emote} {movie.imdb_id} - {movie.title}",
                     value=f"IMDb rating: {movie.rating}"
                     f"{f' - Watched on: {movie.watched_date}' if movie.watched_date else ''}",
                     inline=False,
@@ -86,7 +87,7 @@ class Movies(commands.Cog):
                         color=EMBED_COLORS["error"],
                     )
                 )
-            except sqlalchemy.orm.exc.NoResultFound:
+            except NoResultFound:
                 try:
                     data = self.imdb.get_movie(imdb_id).data
                     new_movie = Movie(
@@ -129,7 +130,7 @@ class Movies(commands.Cog):
     @cog_ext.cog_subcommand(
         base=group_name,
         name="watch",
-        description="Select a random movie from the list"
+        description="Select a random movie from the list. "
         "You can also specify a movie ID that is already in the list",
     )
     async def watch_movie(self, ctx: commands.Context, imdb_id: int = None):
@@ -160,7 +161,7 @@ class Movies(commands.Cog):
                             )
                         )
                         return
-                except sqlalchemy.orm.exc.NoResultFound:
+                except NoResultFound:
                     await message.edit(
                         embed=Embed(
                             title="Movie is not on the list.",
@@ -334,3 +335,34 @@ class Movies(commands.Cog):
                 color=EMBED_COLORS["ready"],
             )
         )
+
+    @cog_ext.cog_subcommand(
+        base=group_name,
+        name="remove",
+        description="Removes a movie from the list",
+    )
+    async def remove_movie(self, ctx: commands.Context, imdb_id: int):
+        message = await ctx.send(embed=generate_loading_embed())
+        with Session(self.db) as session:
+            try:
+                movie = session.execute(
+                    select(Movie).filter_by(
+                        imdb_id=imdb_id, guild_id=ctx.guild.id
+                    )
+                ).scalar_one()
+            except NoResultFound:
+                await message.edit(
+                    embed=Embed(
+                        title="This movie is not on the list",
+                        color=EMBED_COLORS["error"],
+                    )
+                )
+                return
+            session.delete(movie)
+            session.flush()
+            session.commit()
+            await message.edit(
+                embed=Embed(
+                    title="Movie removed :)", color=EMBED_COLORS["ready"]
+                )
+            )

@@ -12,4 +12,3 @@ EMBED_COLORS = {
     "error": Colour.red(),
 }
 LOADING_MESSAGES = ["Hold on a sec", "What are you waiting for?"]
-GUILD_IDS = [829422702968045568]
