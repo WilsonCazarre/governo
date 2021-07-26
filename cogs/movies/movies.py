@@ -51,7 +51,9 @@ class Movies(commands.Cog):
             color=EMBED_COLORS["ready"],
         )
         with Session(self.db) as session:
-            for movie in session.execute(select(Movie)).all():
+            for movie in session.execute(
+                select(Movie).filter_by(guild_id=ctx.guild.id)
+            ).all():
                 movie = movie[0]
                 emote = ":white_check_mark:" if movie.watched_date else ":x:"
                 embed.add_field(
@@ -73,7 +75,9 @@ class Movies(commands.Cog):
         with Session(self.db) as session:
             try:
                 session.execute(
-                    select(Movie).filter_by(imdb_id=imdb_id)
+                    select(Movie).filter_by(
+                        imdb_id=imdb_id, guild_id=ctx.guild.id
+                    )
                 ).scalar_one()
                 await message.edit(
                     embed=Embed(
@@ -142,7 +146,10 @@ class Movies(commands.Cog):
             if imdb_id:
                 try:
                     chosen: Movie = session.execute(
-                        select(Movie).filter_by(imdb_id=imdb_id)
+                        select(Movie).filter(
+                            imdb_id=imdb_id,
+                            guild_id=ctx.guild.id,
+                        )
                     ).scalar_one()
                     if chosen.watched_date:
                         await message.edit(
@@ -163,7 +170,9 @@ class Movies(commands.Cog):
 
             else:
                 movies = session.execute(
-                    select(Movie).filter_by(watched_date=None)
+                    select(Movie).filter_by(
+                        watched_date=None, guild_id=ctx.guild.id
+                    )
                 ).all()
                 if not movies:
                     await message.edit(
@@ -224,7 +233,8 @@ class Movies(commands.Cog):
                 update(Movie)
                 .where(
                     Movie.imdb_id
-                    == self.currently_watching[ctx.guild.id].imdb_id
+                    == self.currently_watching[ctx.guild.id].imdb_id,
+                    Movie.guild_id == ctx.guild.id,
                 )
                 .values(watched_date=datetime.datetime.now())
             )
@@ -268,7 +278,7 @@ class Movies(commands.Cog):
             session.execute(
                 update(ConfigVariable)
                 .where(
-                    ConfigVariable.guild_id == str(GUILD_IDS[0]),
+                    ConfigVariable.guild_id == str(ctx.guild.id),
                     ConfigVariable.key == "cinema_channel_id",
                 )
                 .values(value=channel_id)
@@ -308,7 +318,7 @@ class Movies(commands.Cog):
                 update(ConfigVariable)
                 .where(
                     ConfigVariable.key == "cinema_role_id",
-                    ConfigVariable.guild_id == str(GUILD_IDS[0]),
+                    ConfigVariable.guild_id == str(ctx.guild.id),
                 )
                 .values(value=mention_id)
             )
