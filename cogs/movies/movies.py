@@ -58,7 +58,8 @@ class Movies(commands.Cog):
                 emote = ":white_check_mark:" if movie.watched_date else ":x:"
                 embed.add_field(
                     name=f"{emote} {movie.title} ({movie.year})",
-                    value=f"IMDb rating: {movie.rating}",
+                    value=f"IMDb rating: {movie.rating}"
+                    f"{f' - Watched on: {movie.watched_date}' if movie.watched_date else ''}",
                     inline=False,
                 )
         await message.edit(embed=embed)
