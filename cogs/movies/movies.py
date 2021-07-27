@@ -1,12 +1,18 @@
+import asyncio
 import datetime
 from random import choice
-from typing import Dict
+from typing import Dict, List
 
 import discord
 from discord import Embed
 from discord.ext import commands
-from discord_slash import cog_ext
+from discord_slash import cog_ext, ButtonStyle, ComponentContext
 from discord_slash.utils.manage_commands import create_option
+from discord_slash.utils.manage_components import (
+    create_button,
+    create_actionrow,
+    wait_for_component,
+)
 from imdb import IMDb, IMDbError
 from sqlalchemy import select, update
 from sqlalchemy.exc import NoResultFound
@@ -62,27 +68,104 @@ class Movies(commands.Cog):
         base=group_name,
         name="list",
         description="Returns the list of movies",
+        options=[
+            create_option(
+                name="filter_by",
+                description="Retrieve watched or non-watched movies. "
+                "Leave it blank to return everything",
+                option_type=3,
+                required=False,
+                choices=["watched", "non-watched"],
+            )
+        ],
     )
-    async def list_movies(self, ctx: commands.Context):
+    async def list_movies(self, ctx: commands.Context, filter_by: str = None):
+        buttons = [
+            create_button(
+                style=ButtonStyle.primary,
+                label="Previous",
+            ),
+            create_button(style=ButtonStyle.primary, label="Next"),
+        ]
+        current_embed = 0
         message = await ctx.send(embed=generate_loading_embed())
-        embed = discord.Embed(
-            title="Homies watchlist",
-            description=":white_check_mark:=Watched    :x:=Not Watched",
-            color=EMBED_COLORS["ready"],
-        )
+        embeds: List[Embed] = []
         with Session(self.db) as session:
-            for movie in session.execute(
-                select(Movie).filter_by(guild_id=ctx.guild.id)
-            ).all():
-                movie = movie[0]
-                emote = ":white_check_mark:" if movie.watched_date else ":x:"
-                embed.add_field(
-                    name=f"{emote} {movie.imdb_id} - {movie.title}",
-                    value=f"IMDb rating: {movie.rating}"
-                    f"{f' - Watched on: {movie.watched_date}' if movie.watched_date else ''}",
-                    inline=False,
+            filters = [Movie.guild_id == ctx.guild.id]
+            if filter_by == "watched":
+                filters.append(Movie.watched_date.is_not(None))
+            elif filter_by == "non-watched":
+                filters.append(Movie.watched_date.is_(None))
+            for rows in session.execute(
+                select(Movie).where(*filters)
+            ).partitions(size=10):
+                description = ":white_check_mark:=Watched --- :x:=Not Watched"
+                if filter_by == "watched":
+                    description = ":white_check_mark:=Watched"
+                elif filter_by == "non-watched":
+                    description = ":x:=Not Watched"
+                embed = discord.Embed(
+                    title=f"{ctx.guild.name} watchlist",
+                    description=description,
+                    color=EMBED_COLORS["ready"],
                 )
-        await message.edit(embed=embed)
+                for movie in rows:
+                    movie = movie[0]
+
+                    emote = (
+                        ":white_check_mark:" if movie.watched_date else ":x:"
+                    )
+                    embed.add_field(
+                        name=f"{emote} {movie.imdb_id} - {movie.title}",
+                        value=f"IMDb rating: {movie.rating}"
+                        f"{f' - Watched on: {movie.watched_date}' if movie.watched_date else ''}",
+                        inline=False,
+                    )
+                embeds.append(embed)
+        action_row = create_actionrow(*buttons)
+        if embeds:
+            embeds[current_embed].set_footer(
+                text=f"Page {current_embed + 1} of {len(embeds)}"
+            )
+            await message.edit(
+                embed=embeds[current_embed], components=[action_row]
+            )
+        else:
+            await message.edit(
+                embed=Embed(
+                    title="Movie list is empty", color=EMBED_COLORS["ready"]
+                )
+            )
+        while True:
+            try:
+                button_ctx: ComponentContext = await wait_for_component(
+                    self.bot, components=action_row, timeout=200
+                )
+            except asyncio.exceptions.TimeoutError:
+                break
+
+            if button_ctx.custom_id == buttons[0]["custom_id"]:
+                if current_embed == 0:
+                    await button_ctx.edit_origin(embed=embeds[current_embed])
+                else:
+                    current_embed -= 1
+                    embeds[current_embed].set_footer(
+                        text=f"Page {current_embed + 1} of {len(embeds)}"
+                    )
+                    await button_ctx.edit_origin(
+                        embed=embeds[current_embed], components=[action_row]
+                    )
+            elif button_ctx.custom_id == buttons[1]["custom_id"]:
+                if current_embed == len(embeds) - 1:
+                    await button_ctx.edit_origin(embed=embeds[current_embed])
+                else:
+                    current_embed += 1
+                    embeds[current_embed].set_footer(
+                        text=f"Page {current_embed + 1} of {len(embeds)}"
+                    )
+                    await button_ctx.edit_origin(
+                        embed=embeds[current_embed], components=[action_row]
+                    )
 
     @cog_ext.cog_subcommand(
         base=group_name,

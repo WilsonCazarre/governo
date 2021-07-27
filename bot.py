@@ -45,7 +45,6 @@ async def on_ready():
 
 @bot.event
 async def on_guild_join(guild: Guild):
-
     print(f"New Guild joined: {guild.name} - Creating config vars")
     with Session(engine) as session:
         for var in GUILD_CONFIG_VARIABLES:
