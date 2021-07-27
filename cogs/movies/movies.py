@@ -139,9 +139,10 @@ class Movies(commands.Cog):
         while True:
             try:
                 button_ctx: ComponentContext = await wait_for_component(
-                    self.bot, components=action_row, timeout=200
+                    self.bot, components=action_row, timeout=60
                 )
             except asyncio.exceptions.TimeoutError:
+                await message.edit(components=None)
                 break
 
             if button_ctx.custom_id == buttons[0]["custom_id"]:
