@@ -90,6 +90,7 @@ class Movies(commands.Cog):
         current_embed = 0
         message = await ctx.send(embed=generate_loading_embed())
         embeds: List[Embed] = []
+
         with Session(self.db) as session:
             filters = [Movie.guild_id == ctx.guild.id]
             if filter_by == "watched":
