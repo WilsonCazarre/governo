@@ -38,7 +38,7 @@ class Aternos(commands.Cog):
     async def start(self, ctx: commands.Context):
         message = await ctx.send(embed=generate_loading_embed())
         try:
-            self.start_server_with_retries(5)
+            self.start_server_with_retries(50)
         except AttributeError:
             await message.edit(
                 content=ctx.author.mention,

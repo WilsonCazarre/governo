@@ -1,10 +1,11 @@
 import cloudscraper
+import requests
 from bs4 import BeautifulSoup
 
 
 class AternosAPI:
     def __init__(self, headers, TOKEN):
-        self.scraper = cloudscraper.CloudScraper()
+        self.scraper = requests
         self.headers = {}
         self.TOKEN = TOKEN
         self.headers[
