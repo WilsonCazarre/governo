@@ -6,12 +6,14 @@ from discord_slash import SlashCommand
 from discord.ext import commands
 from discord.ext.commands import errors
 from dotenv import load_dotenv
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from cogs.aternos import Aternos
 from cogs.help import Help
 from cogs.movies.models import Base, ConfigVariable
-from cogs.movies.movies import Movies
+from cogs.movies import Movies
 from utils.constants import GUILD_CONFIG_VARIABLES
 from utils.functions import get_env_variable
 
@@ -21,7 +23,6 @@ memory = "4096M"
 
 bot = commands.Bot(command_prefix="$")
 slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
-
 
 I_AM_HEROKU = os.getenv("I_AM_HEROKU") == "true"
 if I_AM_HEROKU:
@@ -35,6 +36,7 @@ Base.metadata.create_all(engine)
 
 bot.add_cog(Movies(bot, engine))
 bot.add_cog(Help(bot))
+bot.add_cog(Aternos(bot))
 
 
 @bot.event
