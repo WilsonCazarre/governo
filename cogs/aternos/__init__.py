@@ -49,6 +49,7 @@ class Aternos(commands.Cog):
                     color=EMBED_COLORS["error"],
                 ),
             )
+            return
         await message.edit(
             content=ctx.author.mention,
             embed=Embed(
