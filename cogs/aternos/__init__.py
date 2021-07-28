@@ -18,7 +18,7 @@ class Aternos(commands.Cog):
         base=group_name,
         name="start",
         description="Start the server configured on Aternos",
-        guild_ids=[829422702968045568],
+        guild_ids=[691057767024295997],
     )
     async def start(self, ctx: commands.Context):
         message = await ctx.send(embed=generate_loading_embed())
