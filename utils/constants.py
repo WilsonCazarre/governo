@@ -1,3 +1,4 @@
+from collections import namedtuple
 from pathlib import Path
 
 from discord import Colour
@@ -13,4 +14,16 @@ EMBED_COLORS = {
 }
 LOADING_MESSAGES = ["Hold on a sec", "What are you waiting for?"]
 GUILD_CONFIG_VARIABLES = ["cinema_channel_id", "cinema_role_id"]
-TRUSTED_GUILD_IDS = [691057767024295997]
+TRUSTED_GUILD_IDS = [829422702968045568, 691057767024295997]
+
+AternosStatus = namedtuple(
+    "AternosStatus", ["online", "offline", "preparing", "loading", "starting"]
+)
+
+ATERNOS_STATUS = AternosStatus(
+    offline="Offline",
+    online="Online",
+    preparing="Preparing ...",
+    loading="Loading ...",
+    starting="Starting ...",
+)
