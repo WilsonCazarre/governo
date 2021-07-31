@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import errors
 
-from utils.functions import BASE_DIR, SERVER_HOST_NAME, DISCORD_MAX_BODY_LENGTH
+from utils.constants import BASE_DIR, SERVER_HOST_NAME, DISCORD_MAX_BODY_LENGTH
 from utils.functions import get_env_variable
 
 

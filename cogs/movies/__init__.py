@@ -13,7 +13,7 @@ from discord_slash.utils.manage_components import (
     create_actionrow,
     wait_for_component,
 )
-from imdb import IMDb, IMDbError
+from imdb import IMDb, IMDbError, Person
 from sqlalchemy import select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.future import Engine
@@ -63,6 +63,13 @@ class Movies(commands.Cog):
                     raise MovieCogNotConfigured
                 configs[var_name] = var_model.value
         return configs
+
+    @staticmethod
+    def get_directors_string(directors_data):
+        director_names = [director.data["name"] for director in directors_data]
+        if len(director_names) == 1:
+            return director_names[0]
+        return f"{', '.join(director_names[:-1])} and {director_names[-1]}"
 
     @cog_ext.cog_subcommand(
         base=group_name,
@@ -194,42 +201,45 @@ class Movies(commands.Cog):
             except NoResultFound:
                 try:
                     data = self.imdb.get_movie(imdb_id).data
+                    title = data.get(
+                        "original title", data.get("localized title", "")
+                    )
                     new_movie = Movie(
                         imdb_id=imdb_id,
-                        title=data["original title"],
+                        title=title,
                         year=data["year"],
                         rating=data["rating"],
                         guild_id=ctx.guild.id,
                     )
-                except (IMDbError, KeyError) as e:
-                    if e.args[0] == "original title":
-                        new_movie = Movie(
-                            imdb_id=imdb_id,
-                            title=data["localized title"],
-                            year=data["year"],
-                            rating=data["rating"],
-                            guild_id=ctx.guild.id,
+                except (IMDbError, KeyError):
+                    await message.edit(
+                        embed=Embed(
+                            title="Invalid movie ID",
+                            color=EMBED_COLORS["error"],
                         )
-                    else:
-                        await message.edit(
-                            embed=Embed(
-                                title="Invalid movie ID",
-                                color=EMBED_COLORS["error"],
-                            )
-                        )
-                        return
+                    )
+                    return
 
                 session.add(new_movie)
                 session.flush()
                 session.commit()
-                await message.edit(
-                    content="New Movie added",
-                    embed=Embed(
-                        title=f"{imdb_id} - {new_movie.title}",
-                        description=f"IMDb rating: {new_movie.rating}",
-                        color=EMBED_COLORS["ready"],
-                    ),
+
+                embed = Embed(
+                    title=f'{title} (:star: {data["rating"]})',
+                    description=f"[IMDb page](https://www.imdb.com/title/tt{imdb_id}/)",
+                    color=EMBED_COLORS["ready"],
                 )
+                embed.set_author(name="New movie added")
+                embed.add_field(
+                    name="Original Air Date", value=data["original air date"]
+                )
+                embed.add_field(
+                    name="Directed by",
+                    value=self.get_directors_string(data["directors"]),
+                    inline=False,
+                )
+                embed.set_thumbnail(url=data["cover url"])
+                await message.edit(embed=embed)
 
     @cog_ext.cog_subcommand(
         base=group_name,
