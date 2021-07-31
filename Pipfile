@@ -9,6 +9,7 @@ discord-py-slash-command = "*"
 python-dotenv = "*"
 sqlalchemy = "*"
 imdbpy = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
