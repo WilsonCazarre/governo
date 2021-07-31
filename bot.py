@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from cogs.aternos import Aternos, AternosAPI
 from cogs.help import Help
 from cogs.movies.models import Base, ConfigVariable
 from cogs.movies import Movies
@@ -23,11 +22,6 @@ memory = "4096M"
 
 bot = commands.Bot(command_prefix="$")
 slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
-aternos_api = AternosAPI(
-    username=get_env_variable("ATERNOS_USERNAME"),
-    password=get_env_variable("ATERNOS_PASSWORD"),
-    server_address=get_env_variable("ATERNOS_SERVER_ADDRESS"),
-)
 
 I_AM_HEROKU = os.getenv("I_AM_HEROKU") == "true"
 if I_AM_HEROKU:
@@ -41,8 +35,6 @@ Base.metadata.create_all(engine)
 
 bot.add_cog(Movies(bot, engine))
 bot.add_cog(Help(bot))
-
-bot.add_cog(Aternos(bot, aternos_api))
 
 
 @bot.event

@@ -7,7 +7,7 @@ from discord.ext import commands, tasks
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
-from utils.functions import BASE_DIR
+from utils.constants import BASE_DIR
 from cogs.minecraftserver import MinecraftServer
 
 
