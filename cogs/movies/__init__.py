@@ -274,7 +274,7 @@ class Movies(commands.Cog):
             if imdb_id:
                 try:
                     chosen: Movie = session.execute(
-                        select(Movie).filter(
+                        select(Movie).filter_by(
                             imdb_id=imdb_id,
                             guild_id=ctx.guild.id,
                         )
